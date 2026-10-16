@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#faf7f2">
+<title>我的课表 · 顺职大</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --paper:#faf7f2; --card:#fffdfa; --ink:#2b2622; --ink2:#6b625a; --ink3:#9b9188;
+  --line:#e8e0d6; --accent:#c4562f; --accent-soft:#fdf1ea; --ok:#3f7d52;
+}
+html,body{background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.5}
+body{padding:0 0 48px;max-width:760px;margin:0 auto}
+header{padding:26px 20px 14px}
+h1{font-size:21px;font-weight:650;letter-spacing:.01em}
+.term{margin-top:3px;font-size:12.5px;color:var(--ink3);letter-spacing:.04em}
+.datebar{display:flex;align-items:center;gap:8px;padding:6px 20px 16px;flex-wrap:wrap}
+.navbtn{width:32px;height:32px;border:1px solid var(--line);background:var(--card);
+  border-radius:9px;color:var(--ink2);font-size:16px;cursor:pointer;line-height:1;
+  display:flex;align-items:center;justify-content:center;transition:.15s}
+.navbtn:hover{border-color:var(--accent);color:var(--accent)}
+.dateinput{border:1px solid var(--line);background:var(--card);border-radius:9px;
+  padding:6px 10px;font-size:13.5px;color:var(--ink);font-family:inherit;cursor:pointer}
+.dateinput:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.today-btn{border:1px solid var(--line);background:var(--card);border-radius:9px;
+  padding:6px 11px;font-size:12.5px;color:var(--ink2);cursor:pointer;transition:.15s}
+.today-btn:hover{border-color:var(--accent);color:var(--accent)}
+.wkinfo{margin-left:auto;font-size:12.5px;color:var(--ink3);letter-spacing:.03em}
+section{padding:0 20px}
+.dayhead{display:flex;align-items:baseline;gap:10px;margin:4px 0 14px}
+.dayhead .d{font-size:17px;font-weight:650}
+.dayhead .w{font-size:13px;color:var(--ink3)}
+.dayhead .badge{font-size:11.5px;padding:2px 8px;border-radius:20px;
+  background:var(--accent-soft);color:var(--accent);font-weight:600}
+.course{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:13px 15px;margin-bottom:10px;display:flex;gap:14px;position:relative;overflow:hidden}
+.course::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);opacity:.75}
+.time{flex:0 0 74px;font-variant-numeric:tabular-nums}
+.time .p{font-size:11.5px;color:var(--accent);font-weight:650;letter-spacing:.02em}
+.time .t{font-size:12.5px;color:var(--ink3);margin-top:2px}
+.time .s{font-size:11px;color:var(--ink3);opacity:.8}
+.cbody{flex:1;min-width:0}
+.cname{font-size:15.5px;font-weight:600;letter-spacing:.01em;word-break:break-word}
+.cmeta{margin-top:5px;font-size:12.5px;color:var(--ink2);display:flex;flex-wrap:wrap;gap:5px 14px}
+.cmeta span{display:inline-flex;align-items:center;gap:4px}
+.cmeta .lab{color:var(--ink3);font-size:11.5px}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;
+  padding:38px 20px;text-align:center;color:var(--ink3);font-size:14px}
+.empty .big{font-size:26px;margin-bottom:8px}
+.weekwrap{margin-top:30px}
+.secttl{font-size:13px;font-weight:650;color:var(--ink2);letter-spacing:.06em;
+  text-transform:uppercase;margin-bottom:12px;padding-left:20px}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:0 20px}
+.gcell{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:7px 6px;min-height:74px;font-size:11px;cursor:pointer;transition:.15s}
+.gcell:hover{border-color:var(--accent);transform:translateY(-1px)}
+.gcell.is-today{border-color:var(--accent);background:var(--accent-soft)}
+.gcell .gh{font-size:10.5px;color:var(--ink3);font-weight:600;margin-bottom:4px;
+  display:flex;justify-content:space-between}
+.gcell .gc{color:var(--ink);line-height:1.32;margin-bottom:3px;padding-left:6px;
+  border-left:2px solid var(--accent);word-break:break-word;opacity:.92}
+.gcell .gc:last-child{margin-bottom:0}
+.gcell.off{opacity:.42}
+.legend{padding:14px 20px 0;font-size:11.5px;color:var(--ink3);text-align:center}
+@media(max-width:520px){
+  .time{flex:0 0 62px}
+  .cname{font-size:15px}
+  .grid{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>我的课表</h1>
+  <div class="term" id="termLabel"></div>
+</header>
+
+<div class="datebar">
+  <button class="navbtn" id="prevDay" title="前一天">‹</button>
+  <input type="date" class="dateinput" id="datePicker">
+  <button class="navbtn" id="nextDay" title="后一天">›</button>
+  <button class="today-btn" id="todayBtn">今天</button>
+  <span class="wkinfo" id="weekInfo"></span>
+</div>
+
+<section>
+  <div class="dayhead">
+    <span class="d" id="dayTitle"></span>
+    <span class="w" id="dayWeek"></span>
+    <span class="badge" id="dayBadge" style="display:none">今天</span>
+  </div>
+  <div id="dayList"></div>
+</section>
+
+<div class="weekwrap">
+  <div class="secttl">本周课表</div>
+  <div class="grid" id="weekGrid"></div>
+  <div class="legend">点击任意日期可跳转查看 · 数据为 2026-10-16 抓取快照</div>
+</div>
+
+<script>
+const DATA = {
+ "term": "2026-2027 学年 第一学期",
+ "termId": "2026-2027-1",
+ "firstMonday": "2026-08-31",
+ "bigPeriods": {
+  "1": "第一大节",
+  "2": "第二大节",
+  "3": "第三大节",
+  "4": "第四大节",
+  "5": "第五大节"
+ },
+ "courses": [
+  {
+   "n": "网络互联技术（IOT）",
+   "t": "杨磊讲师（高校）",
+   "p": "信息楼(3-B-704)",
+   "w": 1,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "n": "机械制图与机械基础（EAT）",
+   "t": "罗建成高级工程师",
+   "p": "教学楼(5-5-205)",
+   "w": 1,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    8
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 1,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 1,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "网络互联技术（IOT）",
+   "t": "杨磊讲师（高校）",
+   "p": "信息楼(3-B-704)",
+   "w": 1,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "n": "机械制图与机械基础（EAT）",
+   "t": "罗建成高级工程师",
+   "p": "教学楼(5-5-205)",
+   "w": 1,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    8
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 1,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 1,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "机械制图与机械基础（EAT）",
+   "t": "罗建成高级工程师",
+   "p": "教学楼(5-5-205)",
+   "w": 1,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "n": "形势与政策（三年制）#",
+   "t": "高瑶讲师（高校）",
+   "p": "8号教学楼(5-8-205)",
+   "w": 1,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 1,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "机械制图与机械基础（EAT）",
+   "t": "罗建成高级工程师",
+   "p": "教学楼(5-5-305)",
+   "w": 1,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    11,
+    12,
+    13
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 1,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    14
+   ]
+  },
+  {
+   "n": "机械制图与机械基础（EAT）",
+   "t": "罗建成高级工程师",
+   "p": "教学楼(5-5-205)",
+   "w": 1,
+   "b": 4,
+   "s": "7-8",
+   "st": "15:50",
+   "et": "17:20",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    7
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 1,
+   "b": 4,
+   "s": "7-8",
+   "st": "15:50",
+   "et": "17:20",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "机械制图与机械基础（EAT）",
+   "t": "罗建成高级工程师",
+   "p": "教学楼(5-5-305)",
+   "w": 1,
+   "b": 4,
+   "s": "7-8",
+   "st": "15:50",
+   "et": "17:20",
+   "wk": [
+    11,
+    12,
+    13
+   ]
+  },
+  {
+   "n": "单片机应用开发",
+   "t": "邹运怀工程师",
+   "p": "信息楼(3-B-704)",
+   "w": 2,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 2,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 2,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "单片机应用开发",
+   "t": "邹运怀工程师",
+   "p": "信息楼(3-B-704)",
+   "w": 2,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 2,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 2,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "音乐鉴赏*",
+   "t": "何乔康助教（高校）",
+   "p": "1号教学楼(5-1-205)",
+   "w": 2,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 2,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 2,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "机械制图与机械基础（EAT）",
+   "t": "罗建成高级工程师",
+   "p": "教学楼(5-5-205)",
+   "w": 2,
+   "b": 4,
+   "s": "7-8",
+   "st": "15:50",
+   "et": "17:20",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    6
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 2,
+   "b": 4,
+   "s": "7-8",
+   "st": "15:50",
+   "et": "17:20",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "机械制图与机械基础（EAT）",
+   "t": "罗建成高级工程师",
+   "p": "教学楼(5-5-205)",
+   "w": 2,
+   "b": 4,
+   "s": "7-8",
+   "st": "15:50",
+   "et": "17:20",
+   "wk": [
+    11,
+    12,
+    13
+   ]
+  },
+  {
+   "n": "电子线路板设计与制作（IOT）",
+   "t": "刘新海副教授,谢飞教授",
+   "p": "信息楼(信息中心607)",
+   "w": 3,
+   "b": 1,
+   "s": "1-4",
+   "st": "08:00",
+   "et": "11:20",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "n": "机械制图与机械基础（EAT）",
+   "t": "罗建成高级工程师",
+   "p": "教学楼(5-5-206)",
+   "w": 3,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    8
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 3,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "单片机应用开发",
+   "t": "邹运怀工程师",
+   "p": "信息楼(3-B-704)",
+   "w": 3,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    11
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 3,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "音乐鉴赏*",
+   "t": "何乔康助教（高校）",
+   "p": "1号教学楼(5-1-205)",
+   "w": 3,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    9
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 3,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "单片机应用开发",
+   "t": "邹运怀工程师",
+   "p": "信息楼(3-B-704)",
+   "w": 3,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    11
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 3,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "电子线路板设计与制作（IOT）",
+   "t": "刘新海副教授,谢飞教授",
+   "p": "信息楼(信息中心607)",
+   "w": 4,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 4,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 4,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "电子线路板设计与制作（IOT）",
+   "t": "刘新海副教授,谢飞教授",
+   "p": "信息楼(信息中心607)",
+   "w": 4,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 4,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 4,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "单片机应用开发",
+   "t": "邹运怀工程师",
+   "p": "信息楼(3-B-704)",
+   "w": 4,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 4,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 4,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "单片机应用开发",
+   "t": "邹运怀工程师",
+   "p": "信息楼(3-B-704)",
+   "w": 4,
+   "b": 4,
+   "s": "7-8",
+   "st": "15:50",
+   "et": "17:20",
+   "wk": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8,
+    9
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 4,
+   "b": 4,
+   "s": "7-8",
+   "st": "15:50",
+   "et": "17:20",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "数字电子技术（IOT）",
+   "t": "曾乐天副教授",
+   "p": "教学楼(5-6-303)",
+   "w": 5,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    11,
+    12,
+    15,
+    16,
+    17,
+    18,
+    19
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 5,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 5,
+   "b": 1,
+   "s": "1-2",
+   "st": "08:00",
+   "et": "09:30",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "数字电子技术（IOT）",
+   "t": "曾乐天副教授",
+   "p": "教学楼(5-6-303)",
+   "w": 5,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    11,
+    12,
+    15,
+    16,
+    17,
+    18,
+    19
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 5,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 5,
+   "b": 2,
+   "s": "3-4",
+   "st": "09:50",
+   "et": "11:20",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "开关电源应用技术（IOT）",
+   "t": "李亚军教授",
+   "p": "教学楼(5-6-303)",
+   "w": 5,
+   "b": 3,
+   "s": "5-8",
+   "st": "14:00",
+   "et": "17:20",
+   "wk": [
+    3,
+    4,
+    5,
+    6,
+    7
+   ]
+  },
+  {
+   "n": "开关电源应用技术（IOT）",
+   "t": "李亚军教授",
+   "p": "教学楼(5-6-303)",
+   "w": 5,
+   "b": 3,
+   "s": "5-8",
+   "st": "14:00",
+   "et": "17:20",
+   "wk": [
+    8,
+    9,
+    11,
+    12
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 5,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    10
+   ]
+  },
+  {
+   "n": "PLC控制技术（B）",
+   "t": "康世斌讲师（高校）",
+   "p": "实训楼(6-3-502-2)",
+   "w": 5,
+   "b": 3,
+   "s": "5-6",
+   "st": "14:00",
+   "et": "15:30",
+   "wk": [
+    13,
+    14
+   ]
+  },
+  {
+   "n": "物联网综合项目实训I",
+   "t": "李继祥讲师（高校）",
+   "p": "实训楼(6-5-501-1)",
+   "w": 5,
+   "b": 4,
+   "s": "7-8",
+   "st": "15:50",
+   "et": "17:20",
+   "wk": [
+    10
+   ]
+  }
+ ]
+};
+
+const WD = ['','周一','周二','周三','周四','周五','周六','周日'];
+const WDFULL = ['','星期一','星期二','星期三','星期四','星期五','星期六','星期日'];
+
+function pad(n){return n<10?'0'+n:''+n;}
+function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function parseYmd(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function dayDiff(a,b){return Math.round((a-b)/86400000);}
+
+const FIRST = parseYmd(DATA.firstMonday);
+function weekOf(d){ return Math.floor(dayDiff(d,FIRST)/7)+1; }
+function weekdayOf(d){ const w=d.getDay(); return w===0?7:w; }
+
+function coursesOn(d){
+  const wk = weekOf(d), wd = weekdayOf(d);
+  if (wk < 1) return [];
+  return DATA.courses.filter(c => c.w===wd && c.wk.includes(wk))
+    .sort((a,b)=> (a.st||'').localeCompare(b.st||''));
+}
+
+// 大节时间（用于网格里按大节排序展示）
+function renderDay(d){
+  const wk = weekOf(d), wd = weekdayOf(d);
+  document.getElementById('dayTitle').textContent = ymd(d);
+  document.getElementById('dayWeek').textContent = WDFULL[wd];
+  document.getElementById('weekInfo').textContent = wk>=1 ? ('第 '+wk+' 周') : '假期 / 学期外';
+  const isToday = ymd(d)===ymd(new Date());
+  document.getElementById('dayBadge').style.display = isToday?'':'none';
+
+  const list = coursesOn(d);
+  const box = document.getElementById('dayList');
+  if(!list.length){
+    const why = wk<1 ? '还没开学' : (wk>20 ? '学期已结束' : '当天没有安排课程');
+    box.innerHTML = '<div class="empty"><div class="big">☕</div>'+why+'</div>';
+    return;
+  }
+  box.innerHTML = list.map(c=>{
+    const big = DATA.bigPeriods[c.b] || '';
+    const range = (c.st&&c.et) ? (c.st+'~'+c.et) : '';
+    return '<div class="course">'
+      +'<div class="time">'
+        +'<div class="p">'+big+'</div>'
+        +'<div class="t">'+range+'</div>'
+        +'<div class="s">第'+c.s+'节</div>'
+      +'</div>'
+      +'<div class="cbody">'
+        +'<div class="cname">'+esc(c.n)+'</div>'
+        +'<div class="cmeta">'
+          +(c.t?'<span><span class="lab">老师</span>'+esc(c.t)+'</span>':'')
+          +(c.p?'<span><span class="lab">地点</span>'+esc(c.p)+'</span>':'')
+        +'</div>'
+      +'</div></div>';
+  }).join('');
+}
+
+function esc(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+
+function renderWeek(d){
+  const wd = weekdayOf(d);
+  const monday = new Date(d); monday.setDate(d.getDate()-(wd-1));
+  const wk = weekOf(monday);
+  const today = ymd(new Date());
+  let html='';
+  for(let i=0;i<7;i++){
+    const cur = new Date(monday); cur.setDate(monday.getDate()+i);
+    const cs = coursesOn(cur);
+    const isToday = ymd(cur)===today;
+    html += '<div class="gcell'+(isToday?' is-today':'')+(cs.length?'':' off')+'" data-d="'+ymd(cur)+'">'
+      +'<div class="gh"><span>'+WD[i+1]+'</span><span>'+(cur.getMonth()+1)+'/'+cur.getDate()+'</span></div>'
+      + cs.map(c=>'<div class="gc">'+esc(c.n.replace(/[（(].*?[)）]/g,''))+'</div>').join('')
+      +'</div>';
+  }
+  const g=document.getElementById('weekGrid');
+  g.innerHTML=html;
+  g.querySelectorAll('.gcell').forEach(el=>{
+    el.onclick=()=>{ setDate(parseYmd(el.dataset.d)); };
+  });
+}
+
+let current = new Date();
+function setDate(d){
+  current = d;
+  document.getElementById('datePicker').value = ymd(d);
+  renderDay(d); renderWeek(d);
+}
+
+document.getElementById('termLabel').textContent = DATA.term + ' · ' + DATA.termId;
+document.getElementById('datePicker').onchange = e => {
+  if(e.target.value) setDate(parseYmd(e.target.value));
+};
+document.getElementById('prevDay').onclick = ()=>{ const d=new Date(current); d.setDate(d.getDate()-1); setDate(d); };
+document.getElementById('nextDay').onclick = ()=>{ const d=new Date(current); d.setDate(d.getDate()+1); setDate(d); };
+document.getElementById('todayBtn').onclick = ()=> setDate(new Date());
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft'){ document.getElementById('prevDay').click(); }
+  if(e.key==='ArrowRight'){ document.getElementById('nextDay').click(); }
+});
+setDate(new Date());
+</script>
+</body>
+</html>
